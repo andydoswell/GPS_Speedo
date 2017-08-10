@@ -1,6 +1,6 @@
 /*
   GPS speedometer.
-  (c)8th July 2017 A.G.Doswell  Web Page http://andydoz.blogspot.co.uk
+  (c) 10th August 2017 A.G.Doswell  Web Page http://andydoz.blogspot.co.uk
 
   Available to download from https://github.com/andydoswell/GPS-Speedo
 
@@ -51,7 +51,7 @@ void setup()   {
   milesHundred = EEPROM.read (2);
   milesThousand = EEPROM.read (3);
   milesTenThousand = EEPROM.read (4);
-  EEPROM.get (5,distanceMeters);
+  EEPROM.get (5, distanceMeters);
   //setMileage (); // writes a new mileage to the EEPROM. Run this once, and then comment it out, and reload the sketch. You can set the mileage required in the setMileage function.
 
   digitalWrite(8, HIGH); // set power to main.
@@ -155,9 +155,11 @@ void loop() {
 
 void checkPower () {
   if (!(digitalRead(9))) { // if Pin 9 is low, then write mileage to the EEPROM and shutdown
-    delay (1500);
-    updateEEPROM ();
-    delay (1500);
+    delay (15000);
+    if (!(digitalRead(9))) { // check power again, just to be sure (all this paranoia is to prevent EEPROM corruption)
+      updateEEPROM ();
+      delay (1500);
+    }
     digitalWrite (8, LOW);// switch off power
   }
 }
@@ -177,7 +179,7 @@ void processGPS () {
         oldLong = gps.location.lng();
       }
     }
-    if (distanceMeters >= 1609.34) { // 1609.34m in a mile 
+    if (distanceMeters >= 1609.34) { // 1609.34m in a mile
       distanceMeters = distanceMeters - 1609.34;
       incrementMileage ();
     }
@@ -206,7 +208,7 @@ void updateDisplay() {               // Display the data
   OzOled.printBigNumber (milesTenA, 9, 1);
   OzOled.printBigNumber (milesUnitA, 12, 1);
   //OzOled.printString("THIS WAY UP!", 3, 0); // uncomment this when glueing the display!
-  
+
 }
 
 void incrementMileage () { // Increment the mileage.
