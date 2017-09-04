@@ -40,20 +40,12 @@ double oldLat;
 double oldLong;
 float distanceMeters;
 boolean fixFlag = false;
-// boolean locked = false;
 const int maxSpeed = 120;
 const int maxStep = 784;
 
 void setup()   {
-  // Get mileage from EEPROM
-  milesUnit = EEPROM.read (0);
-  milesTen = EEPROM.read (1);
-  milesHundred = EEPROM.read (2);
-  milesThousand = EEPROM.read (3);
-  milesTenThousand = EEPROM.read (4);
-  EEPROM.get (5, distanceMeters);
-  //setMileage (); // writes a new mileage to the EEPROM. Run this once, and then comment it out, and reload the sketch. You can set the mileage required in the setMileage function.
-
+  pinMode(8, OUTPUT); // output to power supply over-ride, high gets power from Permanent 12V
+  pinMode(9, INPUT); // input from IGN signal conditioning.
   digitalWrite(8, HIGH); // set power to main.
   OzOled.init();                   // initialze SDD1306 OLED display
   OzOled.sendCommand(0x8d);        // Set displays inbuilt inverter on
@@ -135,9 +127,10 @@ void setup()   {
   Serial.end();// stop Serial coms at 9,600 baud
   delay (100);
   Serial.begin (57600); // start Serial coms at 57,600 baud.
-  pinMode(8, OUTPUT); // output to power supply over-ride, high gets power from Permanent 12V
-  pinMode(9, INPUT); // input from IGN signal conditioning.
-
+  // Get mileage from EEPROM
+  getMileage ();
+  updateDisplay ();
+  //setMileage (); // writes a new mileage to the EEPROM. Run this once, and then comment it out, and reload the sketch. You can set the mileage required in the setMileage function.
 }
 
 void loop() {
@@ -155,12 +148,12 @@ void loop() {
 
 void checkPower () {
   if (!(digitalRead(9))) { // if Pin 9 is low, then write mileage to the EEPROM and shutdown
-    delay (15000);
+    delay (30000);
     if (!(digitalRead(9))) { // check power again, just to be sure (all this paranoia is to prevent EEPROM corruption)
       updateEEPROM ();
       delay (1500);
+      digitalWrite (8, LOW);// switch off power
     }
-    digitalWrite (8, LOW);// switch off power
   }
 }
 
@@ -170,6 +163,7 @@ void processGPS () {
     if (!fixFlag) {
       oldLat = gps.location.lat();
       oldLong = gps.location.lng();
+      getMileage (); // re-read the EEPROM, just in case it was corrupted during cranking.
       fixFlag = true;
     }
     else {
@@ -257,6 +251,15 @@ void setMileage () {
   milesTenThousand = 6;
   distanceMeters = 0;
   updateEEPROM ();
+}
+
+void getMileage () {
+  milesUnit = EEPROM.read (0);
+  milesTen = EEPROM.read (1);
+  milesHundred = EEPROM.read (2);
+  milesThousand = EEPROM.read (3);
+  milesTenThousand = EEPROM.read (4);
+  EEPROM.get (5, distanceMeters);
 }
 /*
    Copyright (c) 2017 Andrew Doswell
